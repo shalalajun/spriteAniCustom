@@ -1,35 +1,31 @@
-import *as THREE from 'three'
+import * as THREE from 'three'
 
-export default class FilpBook
+export default class FlipBookAni
 {
-
-
-    constructor(scene, spriteTexture, tileHorize, tileVertical)
+    constructor(spriteTexture, tileHorize, tileVertical)
     {
+        // note: texture passed by reference, will be updated by the update function.
+        this.texture = spriteTexture;
+        //this.texture.flipY = false
+        this.texture.magFilter = THREE.NearestFilter;
+        spriteTexture.wrapS = spriteTexture.wrapT = THREE.RepeatWrapping; 
+        this.texture.repeat.set(1/tileHorize, 1/tileVertical);
+
         this.currentTile = 0
         this.tileHorize = 0
         this.tileVertical = 0
+
+
+        this.tileHorize = tileHorize;
+        this.tileVertical = tileVertical;
+
+
         this.playSpriteIndices = []
         this.runningTileArrayIndex = 0
         this.maxDisplayTime = 0
         this.elapsedTime = 0
 
-        this.map = new THREE.TextureLoader().load(spriteTexture)
-        this.map.magFilter = THREE.NearestFilter
-        this.tileHorize = tileHorize
-        this.tileVertical = tileVertical
-        this.map.repeat.set(1/this.tileHorize, 1/this.tileVertical)
-
-        this.material = new THREE.MeshBasicMaterial({map: this.map})
-        this.sprite = new THREE.Sprite(this.material)
-        this.sprite.position.y = 0.5
-
-        scene.add(this.sprite)
-
-        this.update(0)
-
     }
-
 
     loop(playSpriteIndices, totalduration)
     {
@@ -42,18 +38,17 @@ export default class FilpBook
     update(delta)
     {
         this.elapsedTime += delta
-
+        
         if(this.maxDisplayTime > 0 && this.elapsedTime >= this.maxDisplayTime)
         {
             this.elapsedTime = 0
             this.runningTileArrayIndex = (this.runningTileArrayIndex + 1) % this.playSpriteIndices.length
             this.currentTile = this.playSpriteIndices[this.runningTileArrayIndex]
-
+     
             const offsetX = (this.currentTile % this.tileHorize) / this.tileHorize
             const offsetY = (this.tileVertical - Math.floor(this.currentTile / this.tileHorize)-1) / this.tileVertical
-            this.map.offset.x = offsetX
-            this.map.offset.y = offsetY
+            this.texture.offset.x = offsetX
+            this.texture.offset.y = offsetY
         }
     }
-
 }

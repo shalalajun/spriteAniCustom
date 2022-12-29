@@ -2,11 +2,11 @@ import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'lil-gui'
-import FilpBook from './FlipBook.js'
+import FlipBookAni from './FlipBookAni.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 
-let head
+
 
 /**
  * Base
@@ -48,11 +48,12 @@ gltfLoader.load('models/headTest.glb', (gltf)=>{
     scene.add(head)
 })
 
-const spriteAni = new TextureAnimator(spriteTexture, 8, 5, 40, 60)
 
-// const flipbook = new FilpBook(scene, 'textures/sprite/sprite.png', 8, 5)
-// flipbook.setModel(scene)
-// flipbook.loop([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16], 0.3)
+// const spriteAni = new TextureAnimator2(spriteTexture, 8, 5)
+// spriteAni.loop([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23], 0.5)
+
+const flipBookAni = new FlipBookAni(spriteTexture, 8, 5)
+flipBookAni.loop([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23], 0.5)
 
 
 /**
@@ -109,8 +110,9 @@ const tick = () =>
     const deltaTime = clock.getDelta()
     // Update controls
     controls.update()
-    spriteAni.update(1000 * deltaTime)
-    //flipbook.update(deltaTime)
+   // spriteAni.update(deltaTime)
+ 
+    flipBookAni.update(deltaTime)
 
     // Render
     renderer.render(scene, camera)
@@ -125,7 +127,7 @@ tick()
 function TextureAnimator(texture, tilesHoriz, tilesVert, numTiles, tileDispDuration) 
 {	
 	// note: texture passed by reference, will be updated by the update function.
-		
+	
 	this.tilesHorizontal = tilesHoriz;
 	this.tilesVertical = tilesVert;
 	// how many images does this spritesheet contain?
@@ -159,4 +161,58 @@ function TextureAnimator(texture, tilesHoriz, tilesVert, numTiles, tileDispDurat
 			texture.offset.y = currentRow / this.tilesVertical;
 		}
 	};
+}
+
+
+function TextureAnimator2(spriteTexture, tileHorize, tileVertical) 
+{	
+	// note: texture passed by reference, will be updated by the update function.
+    this.texture = spriteTexture;
+    //this.texture.flipY = false
+    this.texture.magFilter = THREE.NearestFilter;
+    spriteTexture.wrapS = spriteTexture.wrapT = THREE.RepeatWrapping; 
+    this.texture.repeat.set(1/tileHorize, 1/tileVertical);
+
+    this.currentTile = 0
+    this.tileHorize = 0
+    this.tileVertical = 0
+
+   
+    this.tileHorize = tileHorize;
+	this.tileVertical = tileVertical;
+
+
+    this.playSpriteIndices = []
+    this.runningTileArrayIndex = 0
+    this.maxDisplayTime = 0
+    this.elapsedTime = 0
+    
+    this.loop = function(playSpriteIndices, totalduration)
+    {
+        this.playSpriteIndices = playSpriteIndices
+        this.runningTileArrayIndex = 0
+        this.currentTile = playSpriteIndices[this.runningTileArrayIndex]
+        this.maxDisplayTime = totalduration / this.playSpriteIndices.length
+        
+    }
+	
+	this.update = function(delta)
+    {
+        this.elapsedTime += delta
+        
+        if(this.maxDisplayTime > 0 && this.elapsedTime >= this.maxDisplayTime)
+        {
+            this.elapsedTime = 0
+            this.runningTileArrayIndex = (this.runningTileArrayIndex + 1) % this.playSpriteIndices.length
+            this.currentTile = this.playSpriteIndices[this.runningTileArrayIndex]
+     
+            const offsetX = (this.currentTile % this.tileHorize) / this.tileHorize
+            const offsetY = (this.tileVertical - Math.floor(this.currentTile / this.tileHorize)-1) / this.tileVertical
+            this.texture.offset.x = offsetX
+            this.texture.offset.y = offsetY
+        }
+
+    }
+    
+
 }
